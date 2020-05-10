@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html> 
+	<head> 
+		<title>Диаграмма Вороного</title> 
+
+		<meta charset="utf-8">
+
+		<style type="text/css">
+			body { 
+				margin: 0; 
+				padding: 0; 
+				height: 100%; 
+				font-size:20px;
+			}
+		</style>
+		
+		<script type="text/javascript" src="voronoi.js"></script> 
+		
+		<script id="script" type="text/javascript">
+			
+			var computeVoronoi = false;
+			var computeDelaunay = true;
+			
+			function onLoad() {
+				canv = document.getElementById("c");
+				canv.onmousemove = onMM;
+				canv.onclick = onClick;
+				ctx = canv.getContext("2d");
+				w = canv.width = window.innerWidth;
+				h = canv.height = window.innerHeight;
+				points = [];
+				voronoi = new Voronoi();
+				aw = w * 0.1;
+				bw = w - aw;
+				ah = h * 0.1;
+				bh = h - ah;
+
+				for (i = 0; i < 100; i++) {
+					points.push({x: Math.random() * (bw - aw) + aw, y: Math.random() * (bh - ah) + ah});
+				}
+
+				redraw();
+			}
+			
+			function generateSites(n) {
+				points = [];
+				for (i = 0; i < n; i++) {
+					points.push({x: Math.random() * (bw - aw) + aw, y: Math.random() * (bh - ah) + ah});
+				}
+				redraw();
+			}
+			
+			function mouseX(e) {	
+				return e.clientX - e.target.offsetLeft;
+			}
+			
+			function mouseY(e) {	
+				return e.clientY - e.target.offsetTop; 
+			}
+
+			function onMM(e){
+				var last = points[points.length-1];
+				last.x = mouseX(e);
+				last.y = mouseY(e);
+				redraw();
+			}
+			
+			function onClick(e) {
+				var last = points[points.length-1];
+				last.x += Math.random();
+				last.y += Math.random();
+				points.push({x: mouseX(e), y: mouseY(e)});
+			}
+
+			function resetPoints() {
+				points = [points[points.length-1]];
+				redraw();
+			}
+			
+			function redraw() {
+				ctx.fillStyle = "#000000";
+				ctx.fillRect (0, 0, w, h);
+				
+				voronoi.Compute(points, w, h);
+				edges = voronoi.GetEdges();
+
+				if(computeDelaunay)
+				{
+					ctx.lineWidth = 3;
+					ctx.strokeStyle = "#888888";
+					for(i=0; i<edges.length; i++)
+					{
+						var e = edges[i];
+						ctx.beginPath();
+						ctx.moveTo(e.left.x, e.left.y);
+						ctx.lineTo(e.right.x, e.right.y);
+						ctx.closePath();
+						ctx.stroke();
+					}
+				}
+				
+				if(computeVoronoi)
+				{
+					ctx.lineWidth = 4;
+					ctx.strokeStyle = "#FFFFFF";
+					for (i = 0; i < edges.length; i++) {
+						var e = edges[i];
+						ctx.beginPath();
+						ctx.moveTo(e.start.x, e.start.y);
+						ctx.lineTo(e.end.x, e.end.y);
+						ctx.closePath();
+						ctx.stroke();
+					}
+				}
+
+				ctx.fillStyle = "#FF1493"
+				for (i = 0; i < points.length; i++) {
+					var p = points[i];
+					ctx.beginPath();
+					ctx.arc(p.x, p.y, 4, 0, Math.PI*2, true);
+					ctx.closePath();
+					ctx.fill();
+				}
+			}
+		</script> 
+	</head> 
+	
+	<body onload="onLoad()" >
+
+		<form style="position:absolute; z-index:1; margin:10px">
+
+			<input type="button" value="Создать" onclick="generateSites(parseInt(document.getElementById('NumberSites').value,10))" 
+				style="color:white; background-color: transparent; border-color: transparent"/>
+				
+			<input id="NumberSites" type="text" value="100" size="3" maxlength="4" 
+				style="color: white; background-color: transparent; border-color: transparent"/></br>
+
+			<input type="checkbox" onclick="computeVoronoi = this.checked; redraw();"/>
+				<label style="color:white">Вороной</label></br>
+
+			<input type="checkbox" checked="yes" onclick="computeDelaunay = this.checked; redraw();"/>
+				<label style="color:white">Делоне</label></br>
+			
+			<input type="button" value="Сбросить" onclick="resetPoints();" 
+				style="width:100px; color:white; background-color: transparent; border-color: transparent"/>
+		
+		</form>
+
+		<canvas id="c"> </canvas>
+	</body> 
+</html>
